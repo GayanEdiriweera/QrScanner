@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="js/jsQR.js"></script>
+    <!-- Disable ios zoom on input focus -->
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1" />
+    <style>
+      :root {
+        --dark: black;
+        --light: white;
+      }
+      * {
+        white-space: nowrap;
+        font-size: large;
+        color: var(--dark);
+        background-color: var(--light);
+        font-family: sans-serif;
+      }
+      body {
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+      }
+      canvas {
+        object-fit: cover;
+        position: absolute;
+        top: 50vh;
+        left: 50vw;
+        transform: translateX(-50%) translateY(-50%);
+        -webkit-transform: translateX(-50%) translateY(-50%);
+        -ms-transform: translateX(-50%) translateY(-50%);
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" hidden></canvas>
+    <video id="video" autoplay playsinline hidden></video>
+    <script type="text/javascript">
+      var scanResult = "";
+      var context = canvas.getContext("2d", { willReadFrequently: true });
+
+      navigator.mediaDevices
+        .getUserMedia({
+          video: true,
+        })
+        .then((stream) => {
+          video.srcObject = stream;
+          requestAnimationFrame(tick);
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+
+      function drawLine(begin, end) {
+        context.beginPath();
+        context.moveTo(begin.x, begin.y);
+        context.lineTo(end.x, end.y);
+        context.lineWidth = 8;
+        context.strokeStyle = "black";
+        context.stroke();
+      }
+
+      function onScanResultChanged() {
+        const array = [scanResult]; // an array consisting of a single string
+      }
+
+      function tick() {
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+          canvas.hidden = false;
+
+          canvas.height = video.videoHeight;
+          canvas.width = video.videoWidth;
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          var imageData = context.getImageData(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+          );
+          var code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert",
+          });
+          if (code) {
+            if (code.data != scanResult) {
+              scanResult = code.data;
+              onScanResultChanged();
+            }
+            drawLine(code.location.topLeftCorner, code.location.topRightCorner);
+            drawLine(
+              code.location.topRightCorner,
+              code.location.bottomRightCorner
+            );
+            drawLine(
+              code.location.bottomRightCorner,
+              code.location.bottomLeftCorner
+            );
+            drawLine(
+              code.location.bottomLeftCorner,
+              code.location.topLeftCorner
+            );
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+    </script>
+  </body>
+</html>
