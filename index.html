@@ -38,6 +38,8 @@
     <canvas id="canvas" hidden></canvas>
     <video id="video" autoplay playsinline hidden></video>
     <script type="text/javascript">
+      screen.orientation.lock("portrait").catch((e) => {});
+
       var scanResult = "";
       var context = canvas.getContext("2d", { willReadFrequently: true });
 
